@@ -1,0 +1,58 @@
+{
+    "mcpServers": {
+        "bigquery": {
+            "command": "/usr/local/google/home/adamminton/mcp/toolbox",
+            "args": [
+                "--stdio",
+                "--prebuilt",
+                "bigquery",
+                "--user-agent-metadata",
+                "gemini-cli"
+            ],
+            "env": {
+                "BIGQUERY_LOCATION": "US",
+                "BIGQUERY_PROJECT": "adamminton-sandbox"
+            },
+            "excludeTools": [
+                "analyze_contribution",
+                "ask_data_insights",
+                "forecast"
+            ]
+        },
+        "Looker": {
+            "serverUrl": "http://127.0.0.1:5000/mcp",
+            "oauth": {
+                "enabled": true,
+                "clientId": "antigravity-cli"
+            },
+            "disabledTools": [
+                "add_dashboard_element",
+                "add_dashboard_filter",
+                "create_git_branch",
+                "create_project_directory",
+                "create_project_file",
+                "delete_git_branch",
+                "delete_project_directory",
+                "delete_project_file",
+                "generate_embed_url",
+                "get_dashboards",
+                "get_git_branch",
+                "get_looks",
+                "get_project_directories",
+                "get_project_file",
+                "get_project_files",
+                "health_analyze",
+                "health_pulse",
+                "health_vacuum",
+                "list_git_branches",
+                "make_dashboard",
+                "make_look",
+                "query_url",
+                "run_dashboard",
+                "run_look",
+                "switch_git_branch",
+                "update_project_file"
+            ]
+        }
+    }
+}

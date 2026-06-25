@@ -1,0 +1,5 @@
+{
+    "looker.instanceURL": "https://63d8480f-f779-43e6-b043-34fbb61a06e6.looker.app",
+    "looker.projectId": "looker_cicd_sample",
+    "looker.oauthClientId": "looker-extension"
+}

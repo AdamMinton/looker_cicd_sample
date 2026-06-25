@@ -1,0 +1,9 @@
+{
+  "resource": "http://127.0.0.1:5000/mcp",
+  "authorization_servers": [
+    "https://63d8480f-f779-43e6-b043-34fbb61a06e6.looker.app"
+  ],
+  "scopes_supported": [
+    "cors_api"
+  ]
+}
