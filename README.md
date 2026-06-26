@@ -19,7 +19,7 @@ sequenceDiagram
     participant LookerPrd as Looker PRD Instance
 
     %% Feature branch & PR phase
-    Developer->>GitHub: Push feature branch & open PR to master
+    Developer->{{"{"}}GitHub{{"}"}}: Push feature branch & open PR to master
     activate GitHub
     GitHub->>CI: Trigger LAMS workflow
     GitHub->>LookerCI: Trigger CI suite (LookML, SQL, Assert, Content)
@@ -32,18 +32,15 @@ sequenceDiagram
     deactivate GitHub
 
     %% Merge to master phase
-    Developer->>GitHub: Merge PR to master (All checks pass)
+    Developer->{{"{"}}GitHub{{"}"}}: Merge PR to master (All checks pass)
     activate GitHub
-    GitHub->>CI: Trigger deploy-dev.yml workflow
-    activate CI
-    CI->>LookerDev: Deploy master to Production mode (API: deploy_to_production)
-    LookerDev-->>CI: Deploy Success
-    deactivate CI
+    GitHub->>LookerDev: Trigger Deploy Webhook (git pull)
+    LookerDev-->>GitHub: Webhook Success (200 OK)
     GitHub->>CI: Trigger release-please (Create/Update Release PR)
     deactivate GitHub
 
     %% Merge Release PR (Tag deploy) phase
-    Developer->>GitHub: Merge Release PR (Triggers v* Tag)
+    Developer->{{"{"}}GitHub{{"}"}}: Merge Release PR (Triggers v* Tag)
     activate GitHub
     GitHub->>CI: Trigger deploy-prd.yml workflow (v* Tag)
     activate CI
@@ -59,7 +56,7 @@ sequenceDiagram
    - **LAMS**: GitHub Actions run the LookML linter to enforce code style.
    - **Looker CI**: Validates LookML syntax, tests database SQL for every modified explore/dimension/join, executes data tests (`test: ...`), and scans user content (dashboards, looks) in shared spaces to ensure nothing is broken.
 2. **Post-Merge Development Deployment**: When a PR is merged into `master`:
-   - An automatic deploy workflow (`deploy-dev.yml`) runs to authenticate against the Looker Dev instance and deploys the `master` branch to Production mode.
+   - A **GitHub Push Webhook** is automatically sent to the Looker Dev instance to pull the remote `master` commits and deploy them to the Dev instance's production mode.
    - Simultaneously, **Release-Please** creates or updates a Release PR targeting `master` containing versioning updates and a changelog generated from Conventional Commits.
 3. **Production Deployment & Content Migration**: When the Release PR is merged:
    - A release tag (matching `v*`) is pushed.
@@ -172,11 +169,11 @@ We use Google's **Release-Please** to manage versioning and release tags.
 
 ## Gated Deployments
 
-### Dev Deployment (`deploy-dev.yml`)
+### Dev Deployment (Native Webhook)
 - **Trigger**: Pushes/merges to the `master` branch.
-- **Execution**: Logs in to the Dev Looker instance, grabs the API auth token, and calls the `deploy_to_production` endpoint:
+- **Execution**: GitHub automatically triggers Looker's native push webhook, passing the webhook secret. Looker pulls the latest remote `master` commits and updates its production mode instantly.
   ```bash
-  POST /api/4.0/projects/looker_cicd_sample/deploy_to_production
+  POST /webhooks/projects/looker_cicd_sample/deploy
   ```
 
 ### PRD Deployment (`deploy-prd.yml`)
@@ -235,3 +232,18 @@ To allow deployment of specific Git tags to the Production instance via the `dep
 2. Go to **Project Settings** (the gear icon on the left sidebar).
 3. Under the **Git Integration** section, toggle on **Enable Advanced Deploy Mode**.
 4. Click **Save**.
+
+### 3. Configure Native Push Webhook (Dev Instance)
+To automatically deploy pushes or PR merges to `master` into the Dev instance's Production mode securely:
+1. **GitHub Repository Settings**:
+   - In your repository on GitHub, navigate to **Settings > Webhooks > Add webhook**.
+   - **Payload URL**: `https://<your-dev-looker-url>/webhooks/projects/looker_cicd_sample/deploy` (replace `<your-dev-looker-url>` with your Dev instance's domain).
+   - **Content type**: `application/json`
+   - **Secret**: Enter a secure random string (which will be used to sign and authenticate webhook calls).
+   - Select **Just the push event**.
+   - Click **Add webhook**.
+2. **Looker Dev Instance Settings**:
+   - Open the project in the Looker IDE on your **Dev** instance.
+   - Go to **Project Settings** (gear icon on the left sidebar).
+   - Paste the exact same secret string into the **Webhook Deploy Secret** field.
+   - Click **Save Project Settings**.
