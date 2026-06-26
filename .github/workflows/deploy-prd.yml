@@ -100,6 +100,14 @@ jobs:
           DEV_HOST=$(python3 -c "import sys, urllib.parse; print(urllib.parse.urlparse(sys.argv[1]).hostname)" "${DEV_BASE_URL}")
           PRD_HOST=$(python3 -c "import sys, urllib.parse; print(urllib.parse.urlparse(sys.argv[1]).hostname)" "${PRD_BASE_URL}")
           
+          # Workaround looker-deployer split(":") port unpacking crash by appending :443 if no port is present
+          if [[ ! "${DEV_BASE_URL}" =~ :[0-9]+$ ]]; then
+            DEV_BASE_URL="${DEV_BASE_URL}:443"
+          fi
+          if [[ ! "${PRD_BASE_URL}" =~ :[0-9]+$ ]]; then
+            PRD_BASE_URL="${PRD_BASE_URL}:443"
+          fi
+          
           export DEV_BASE_URL PRD_BASE_URL DEV_HOST PRD_HOST
           
           # Write looker.ini
