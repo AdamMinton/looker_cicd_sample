@@ -24,6 +24,35 @@ jobs:
         run: npm install -g @looker/look-at-me-sideways@3
 
       - name: Run LAMS
-        run: lams --reporting=github
+        run: |
+          lams --reporting=no > lams_output.txt 2>&1
+          cat lams_output.txt
+
+      - name: Post LAMS Report as PR Comment
+        if: failure()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -f lams_output.txt ]; then
+            REPORT=$(cat lams_output.txt)
+            
+            # Construct the Markdown body
+            COMMENT_BODY=$(cat <<EOF
+          ### ❌ Looker LAMS Linting Errors
+          
+          LookML style validation failed. Review the style violations below:
+          
+          \`\`\`text
+          $REPORT
+          \`\`\`
+          
+          *Please update your branch with the correct style rules to pass validation checks.*
+          EOF
+            )
+            
+            # Post comment to PR
+            gh pr comment "$PR_NUMBER" --body "$COMMENT_BODY"
+          else
+            echo "No LAMS output file found."
+          fi
