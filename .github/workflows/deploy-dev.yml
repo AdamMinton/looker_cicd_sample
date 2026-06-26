@@ -12,48 +12,25 @@ jobs:
     environment: DEV
 
     steps:
-      - name: Authenticate and Deploy to Dev
+      - name: Trigger Looker Deploy Webhook
         env:
           DEV_LOOKERSDK_BASE_URL: ${{ secrets.DEV_LOOKERSDK_BASE_URL }}
-          DEV_LOOKERSDK_CLIENT_ID: ${{ secrets.DEV_LOOKERSDK_CLIENT_ID }}
-          DEV_LOOKERSDK_CLIENT_SECRET: ${{ secrets.DEV_LOOKERSDK_CLIENT_SECRET }}
         run: |
           if [ -z "$DEV_LOOKERSDK_BASE_URL" ]; then
             echo "Error: DEV_LOOKERSDK_BASE_URL is not set"
             exit 1
           fi
           
-          # Call Looker Login API
-          login_resp=$(curl -s -X POST \
-            -d "client_id=$DEV_LOOKERSDK_CLIENT_ID&client_secret=$DEV_LOOKERSDK_CLIENT_SECRET" \
-            "$DEV_LOOKERSDK_BASE_URL/api/4.0/login")
+          # Trigger deploy webhook to pull master changes into production mode
+          webhook_url="${DEV_LOOKERSDK_BASE_URL}/webhooks/projects/looker_cicd_sample/deploy"
+          echo "Triggering Looker Deploy Webhook: POST $webhook_url"
           
-          token=$(echo "$login_resp" | jq -r '.access_token')
-          if [ "$token" = "null" ] || [ -z "$token" ]; then
-            echo "Error: Failed to authenticate to Looker Dev API"
-            exit 1
-          fi
-          
-          # Mask token in logs
-          echo "::add-mask::$token"
-          
-          # Switch session to Developer workspace (dev mode)
-          curl -s -X PATCH \
-            -H "Authorization: Bearer $token" \
-            -H "Content-Type: application/json" \
-            -d '{"workspace_id":"dev"}' \
-            "$DEV_LOOKERSDK_BASE_URL/api/4.0/session"
-          
-          # Deploy master to Production mode
-          dep_resp=$(curl -s -w "\n%{http_code}" -X POST \
-            -H "Authorization: Bearer $token" \
-            "$DEV_LOOKERSDK_BASE_URL/api/4.0/projects/looker_cicd_sample/deploy_to_production")
-          
-          http_code=$(echo "$dep_resp" | tail -n 1)
-          body=$(echo "$dep_resp" | head -n -1)
+          resp=$(curl -s -w "\n%{http_code}" -X POST "$webhook_url")
+          http_code=$(echo "$resp" | tail -n 1)
+          body=$(echo "$resp" | head -n -1)
           
           if [ "$http_code" -lt 200 ] || [ "$http_code" -gt 299 ]; then
-            echo "Error: Deploy to Dev Production failed (HTTP $http_code)"
+            echo "Error: Deploy webhook failed (HTTP $http_code)"
             echo "Details: $body"
             exit 1
           fi
