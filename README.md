@@ -185,7 +185,7 @@ We use Google's **Release-Please** to manage versioning and release tags.
      POST /api/4.0/projects/looker_cicd_sample/deploy_ref_to_production?ref=v*
      ```
   2. **GCS Backup**: Checks if a backup already exists for the deployment tag. If not, exports Looker Shared Folder (folder ID `1`) content from the Dev instance using `looker-deployer` / `gazer` and uploads it to Google Cloud Storage (GCS).
-     - **GCS Backup Directory Structure**: `gs://looker-migrations-snapshots-adamminton-sandbox/looker_backups/<tag>/`
+     - **GCS Backup Directory Structure**: `gs://looker-migrations-snapshots-gitops/looker_backups/<tag>/`
   3. **Shared Folder Content Import**: Downloads the backup from GCS and imports the content recursively into the PRD instance's Shared Folder using `looker-deployer`.
 
 - **GCP Authentication Options**:

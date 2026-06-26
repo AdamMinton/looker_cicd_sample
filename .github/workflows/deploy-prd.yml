@@ -124,7 +124,7 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          GCS_PATH="gs://looker-migrations-snapshots-adamminton-sandbox/looker_backups/${TAG}/"
+          GCS_PATH="gs://looker-migrations-snapshots-gitops/looker_backups/${TAG}/"
           
           if gcloud storage ls "${GCS_PATH}**" > /dev/null 2>&1; then
             echo "backup_exists=true" >> $GITHUB_OUTPUT
@@ -140,7 +140,7 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          GCS_PATH="gs://looker-migrations-snapshots-adamminton-sandbox/looker_backups/${TAG}/"
+          GCS_PATH="gs://looker-migrations-snapshots-gitops/looker_backups/${TAG}/"
           
           # Export content from dev
           ldeploy content export --ini ./looker.ini --env dev --folders 1 --local-target ./looker_content_export
@@ -194,7 +194,7 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          GCS_PATH="gs://looker-migrations-snapshots-adamminton-sandbox/looker_backups/${TAG}/"
+          GCS_PATH="gs://looker-migrations-snapshots-gitops/looker_backups/${TAG}/"
           
           # Download backup from GCS
           gcloud storage cp --recursive "${GCS_PATH}*" ./looker_content_import/
