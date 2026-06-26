@@ -225,6 +225,7 @@ jobs:
           GCS_PATH="gs://looker-migrations-snapshots-gitops/looker_backups/${TAG}/"
           
           # Download backup from GCS
+          mkdir -p ./looker_content_import
           gcloud storage cp --recursive "${GCS_PATH}*" ./looker_content_import/
           
           # Import content recursively into target
