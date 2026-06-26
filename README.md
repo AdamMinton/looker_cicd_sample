@@ -215,3 +215,23 @@ Configure the following GitHub Secrets/Variables under repository settings to al
 | `GCP_SA_KEY` | Secret | JSON key for the GCP Service Account (optional, required if using Service Account Key authentication) |
 | `GCP_WORKLOAD_IDENTITY_PROVIDER` | Variable | Workload Identity Provider resource path (optional, required if using Workload Identity Federation) |
 | `GCP_SERVICE_ACCOUNT` | Variable | GCP Service Account email (optional, required if using Workload Identity Federation) |
+
+---
+
+## Required Setup Settings
+
+### 1. GitHub Actions Workflow Permissions
+To allow **Release-Please** to automatically generate release Pull Requests and changelogs, you must enable write permissions on your repository:
+1. In your GitHub repository, go to **Settings** (top tab bar).
+2. Under the left sidebar, navigate to **Actions > General**.
+3. Scroll down to the **Workflow permissions** section.
+4. Select **Read and write permissions**.
+5. Check the box for **"Allow GitHub Actions to create and approve pull requests"**.
+6. Click **Save**.
+
+### 2. Enable Advanced Deploy Mode (PRD Instance)
+To allow deployment of specific Git tags to the Production instance via the `deploy_ref_to_production` API, you must enable Advanced Deploy Mode:
+1. Open the project in the Looker IDE on your **PRD** instance.
+2. Go to **Project Settings** (the gear icon on the left sidebar).
+3. Under the **Git Integration** section, toggle on **Enable Advanced Deploy Mode**.
+4. Click **Save**.
