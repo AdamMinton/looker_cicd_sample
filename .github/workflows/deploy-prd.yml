@@ -1,0 +1,53 @@
+name: Deploy to PRD
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  deploy:
+    name: Deploy to PRD
+    runs-on: ubuntu-latest
+    environment: PRD
+
+    steps:
+      - name: Authenticate and Deploy to PRD
+        run: |
+          if [ -z "${{ secrets.PRD_LOOKERSDK_BASE_URL }}" ]; then
+            echo "Error: PRD_LOOKERSDK_BASE_URL is not set"
+            exit 1
+          fi
+          
+          # Call Looker Login API
+          login_resp=$(curl -s -X POST \
+            -d "client_id=${{ secrets.PRD_LOOKERSDK_CLIENT_ID }}&client_secret=${{ secrets.PRD_LOOKERSDK_CLIENT_SECRET }}" \
+            "${{ secrets.PRD_LOOKERSDK_BASE_URL }}/api/4.0/login")
+          
+          token=$(echo "$login_resp" | jq -r '.access_token')
+          if [ "$token" = "null" ] || [ -z "$token" ]; then
+            echo "Error: Failed to authenticate to Looker PRD API"
+            exit 1
+          fi
+          
+          # Mask token in logs
+          echo "::add-mask::$token"
+          
+          # Extract ref name (e.g. tag v1.0.0)
+          ref_name="${{ github.ref_name }}"
+          echo "Deploying ref: $ref_name"
+          
+          # Deploy tag ref to Production
+          dep_resp=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "Authorization: Bearer $token" \
+            "${{ secrets.PRD_LOOKERSDK_BASE_URL }}/api/4.0/projects/looker_cicd_sample/deploy_ref_to_production?ref=$ref_name")
+          
+          http_code=$(echo "$dep_resp" | tail -n 1)
+          body=$(echo "$dep_resp" | head -n -1)
+          
+          if [ "$http_code" -lt 200 ] || [ "$http_code" -gt 299 ]; then
+            echo "Error: Deploy tag ref to PRD Production failed (HTTP $http_code)"
+            echo "Details: $body"
+            exit 1
+          fi
+          echo "Deployment successful: $body"
