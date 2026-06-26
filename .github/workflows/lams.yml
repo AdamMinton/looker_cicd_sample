@@ -1,0 +1,29 @@
+name: Looker LAMS Linting
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lams:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install LAMS
+        run: npm install -g @looker/look-at-me-sideways@3
+
+      - name: Run LAMS
+        run: lams --reporting=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
