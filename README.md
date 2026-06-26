@@ -100,16 +100,19 @@ As a Looker Admin:
 ### 2. Installing the Looker CI GitHub App
 To trigger runs automatically when pull requests are created:
 1. On the **Continuous Integration** Admin page, locate the **GitHub** table.
-2. Find the entry for your repository `looker_cicd_sample` (which is already connected to the project).
-3. Click the **Configure GitHub App** button.
-4. Follow the GitHub authorization flow to install the **Looker CI** application and grant it access to the `looker_cicd_sample` repository.
-5. Once completed, the repository's status in the Looker Admin console will update to **Installed**.
+2. Find the entry for your repository `looker_cicd_sample` (which may be listed under your username or organization).
+3. Click the **Configure GitHub App** blue button at the bottom of the section.
+4. Follow the GitHub authorization flow:
+   - Select the GitHub organization/account where the repository is located.
+   - Choose **Only select repositories** and select `looker_cicd_sample` (or "All repositories" if preferred).
+   - Click **Install & Authorize**.
+5. Once redirected back to the Looker Admin panel, you should see a green checkmark indicating **Installed** next to the `looker_cicd_sample` repository in the list.
 
 ### 3. Configuring the CI Suite & Validators
 In the Looker IDE on the Dev instance:
 1. Click the **Continuous Integration** icon on the left navigation bar.
 2. Click **Suites**, then click **Create suite**.
-3. Set the **Suite name** (e.g., `pull-request-validation`).
+3. Set the **Suite name** to `Main-Test`.
 4. Toggle on **Trigger on pull requests from Looker**.
 5. Configure the following validators in the suite:
    - **LookML Validator**: Fails on Errors.
@@ -122,11 +125,11 @@ Enforce status checks on the `master` branch:
 1. Navigate to your GitHub repository settings > **Branches**.
 2. Add or edit a branch protection rule for the `master` branch.
 3. Check **Require status checks to pass before merging**.
-4. Search for and require the following checks to pass (named based on your Looker CI suite, e.g., if the suite name is `pull-request-validation`):
-   - `Looker CI / pull-request-validation / LookML Validator`
-   - `Looker CI / pull-request-validation / SQL Validator`
-   - `Looker CI / pull-request-validation / Assert Validator`
-   - `Looker CI / pull-request-validation / Content Validator`
+4. Search for and require the following checks to pass (named after the `Main-Test` suite):
+   - `Looker CI / Main-Test / LookML Validator`
+   - `Looker CI / Main-Test / SQL Validator`
+   - `Looker CI / Main-Test / Assert Validator`
+   - `Looker CI / Main-Test / Content Validator`
 5. Check **Require linear history** (to ensure clean rebase merges).
 
 ---
