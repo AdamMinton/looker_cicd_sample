@@ -62,7 +62,13 @@ view: order_items {
     sql: ${TABLE}.user_id ;;
   }
   measure: count {
+    description: "Total items ordered"
     type: count
     drill_fields: [id]
+  }
+  measure: total_sales {
+    description: "Total sales of items"
+    type: sum
+    sql: ${sale_price} ;;
   }
 }
