@@ -247,3 +247,25 @@ To automatically deploy pushes or PR merges to `master` into the Dev instance's 
    - Go to **Project Settings** (gear icon on the left sidebar).
    - Paste the exact same secret string into the **Webhook Deploy Secret** field.
    - Click **Save Project Settings**.
+
+---
+
+## Rollback Procedure
+
+In the event of an issue on the production Looker instance, you can easily perform a rollback to a previous version (both for the LookML code and its associated dashboard/look content).
+
+### **How it works under the hood**
+When you rollback to an older tag (e.g. `v1.0.0`):
+1. **LookML Rollback**: The deployment workflow tells the PRD Looker instance's Advanced Deploy Mode API to target the specific older tag ref (`v1.0.0`).
+2. **Content snapshot Rollback**: The GCS backup step detects that a backup folder for `v1.0.0` already exists on GCS. Rather than exporting the current (broken) folder from Dev, it skips the export and directly downloads the historical backup snapshot of `v1.0.0` and imports it into PRD.
+
+### **Steps to Rollback**
+1. Navigate to your repository on GitHub.
+2. Go to the **Actions** tab.
+3. In the left sidebar, click the **Deploy to PRD** workflow.
+4. Click the **Run workflow** dropdown button on the right side of the page.
+5. In the **Use workflow from** dropdown, select the target release tag you want to rollback to (e.g. `v1.0.0`).
+6. Click the green **Run workflow** button.
+7. Approve the deployment gate in the Actions UI (or let it execute if gates are bypassed).
+
+The pipeline will safely restore both your LookML repository files and the shared folder dashboards/looks to the state they were in at that tag!
