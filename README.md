@@ -19,7 +19,7 @@ sequenceDiagram
     participant LookerPrd as Looker PRD Instance
 
     %% Feature branch & PR phase
-    Developer->>GitHub: Push feature branch & open PR to main
+    Developer->>GitHub: Push feature branch & open PR to master
     activate GitHub
     GitHub->>CI: Trigger LAMS workflow
     GitHub->>LookerCI: Trigger CI suite (LookML, SQL, Assert, Content)
@@ -31,12 +31,12 @@ sequenceDiagram
     CI-->>GitHub: Update LAMS Status Check
     deactivate GitHub
 
-    %% Merge to main phase
-    Developer->>GitHub: Merge PR to main (All checks pass)
+    %% Merge to master phase
+    Developer->>GitHub: Merge PR to master (All checks pass)
     activate GitHub
     GitHub->>CI: Trigger deploy-dev.yml workflow
     activate CI
-    CI->>LookerDev: Deploy main to Production mode (API: deploy_to_production)
+    CI->>LookerDev: Deploy master to Production mode (API: deploy_to_production)
     LookerDev-->>CI: Deploy Success
     deactivate CI
     GitHub->>CI: Trigger release-please (Create/Update Release PR)
@@ -58,9 +58,9 @@ sequenceDiagram
 1. **Pull Request Validation**: Pushing code to a feature branch and opening a PR triggers:
    - **LAMS**: GitHub Actions run the LookML linter to enforce code style.
    - **Looker CI**: Validates LookML syntax, tests database SQL for every modified explore/dimension/join, executes data tests (`test: ...`), and scans user content (dashboards, looks) in shared spaces to ensure nothing is broken.
-2. **Post-Merge Development Deployment**: When a PR is merged into `main`:
-   - An automatic deploy workflow (`deploy-dev.yml`) runs to authenticate against the Looker Dev instance and deploys the `main` branch to Production mode.
-   - Simultaneously, **Release-Please** creates or updates a Release PR targeting `main` containing versioning updates and a changelog generated from Conventional Commits.
+2. **Post-Merge Development Deployment**: When a PR is merged into `master`:
+   - An automatic deploy workflow (`deploy-dev.yml`) runs to authenticate against the Looker Dev instance and deploys the `master` branch to Production mode.
+   - Simultaneously, **Release-Please** creates or updates a Release PR targeting `master` containing versioning updates and a changelog generated from Conventional Commits.
 3. **Production Deployment & Content Migration**: When the Release PR is merged:
    - A release tag (matching `v*`) is pushed.
    - The production deployment workflow (`deploy-prd.yml`) is triggered.
@@ -118,9 +118,9 @@ In the Looker IDE on the Dev instance:
    - **Content Validator**: Configured to check shared spaces (excluding Personal and Archive folders) to catch broken dashboards or looks.
 
 ### 4. GitHub Branch Protection
-Enforce status checks on the `main` branch:
+Enforce status checks on the `master` branch:
 1. Navigate to your GitHub repository settings > **Branches**.
-2. Add or edit a branch protection rule for the `main` branch.
+2. Add or edit a branch protection rule for the `master` branch.
 3. Check **Require status checks to pass before merging**.
 4. Search for and require the following checks to pass (named based on your Looker CI suite, e.g., if the suite name is `pull-request-validation`):
    - `Looker CI / pull-request-validation / LookML Validator`
@@ -147,7 +147,7 @@ Rules are defined under `manifest.lkml`. For example, our custom description val
 ```
 
 ### GitHub Actions Workflow (`lams.yml`)
-The workflow operates on pull requests targeting `main`:
+The workflow operates on pull requests targeting `master`:
 1. Checks out the code.
 2. Sets up Node.js.
 3. Installs the linter globally: `npm install -g @looker/look-at-me-sideways@3`.
@@ -160,9 +160,9 @@ The workflow operates on pull requests targeting `main`:
 We use Google's **Release-Please** to manage versioning and release tags.
 
 ### Release-Please Workflow (`release.yml`)
-- Triggered on push to the `main` branch.
+- Triggered on push to the `master` branch.
 - Uses `google-github-actions/release-please-action@v4` with `release-type: simple`.
-- When a commit is merged to `main`, it analyzes commit history, creates or updates an open "Release PR" containing the updated version and changelog.
+- When a commit is merged to `master`, it analyzes commit history, creates or updates an open "Release PR" containing the updated version and changelog.
 - When the Release PR is merged, it tags the commit (e.g. `v1.2.0`) and creates a GitHub Release.
 
 ---
@@ -170,7 +170,7 @@ We use Google's **Release-Please** to manage versioning and release tags.
 ## Gated Deployments
 
 ### Dev Deployment (`deploy-dev.yml`)
-- **Trigger**: Pushes/merges to the `main` branch.
+- **Trigger**: Pushes/merges to the `master` branch.
 - **Execution**: Logs in to the Dev Looker instance, grabs the API auth token, and calls the `deploy_to_production` endpoint:
   ```bash
   POST /api/4.0/projects/looker_cicd_sample/deploy_to_production

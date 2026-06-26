@@ -3,7 +3,7 @@ name: Looker LAMS Linting
 on:
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   lams:
