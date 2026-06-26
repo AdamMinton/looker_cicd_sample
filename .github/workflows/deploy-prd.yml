@@ -145,6 +145,9 @@ jobs:
           # Export content from dev
           ldeploy content export --ini ./looker.ini --env dev --folders 1 --local-target ./looker_content_export
           
+          # Filter content to only keep models in project
+          python3 scripts/filter_content.py ./looker_content_export
+          
           # Copy exported content to GCS
           gcloud storage cp --recursive ./looker_content_export/* "${GCS_PATH}"
 
