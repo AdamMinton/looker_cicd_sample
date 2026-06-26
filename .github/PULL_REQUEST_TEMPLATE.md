@@ -11,5 +11,5 @@ Please ensure you have completed the following steps before requesting a review:
 - [ ] **Looker Validation**: I have run Looker validation (in Dev Mode or via API/IDE) and verified there are no errors.
 - [ ] **LAMS Lint Check**: I have verified the LAMS linter runs successfully and all style rules are followed.
   - [ ] All new or modified dimensions have descriptions.
-- [ ] **Spectacles CI**: I have verified that all Spectacles suite checks (SQL, Content, Assertions) pass for this branch on the Spectacles dashboard.
+- [ ] **Looker CI**: I have verified that all Looker CI suite checks (SQL, Content, Assertions) pass for this branch.
 - [ ] **Testing**: I have verified and tested the changes (e.g. via Dev Mode queries, SQL Runner, or Explore previews).
