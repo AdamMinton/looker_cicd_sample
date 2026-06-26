@@ -13,16 +13,20 @@ jobs:
 
     steps:
       - name: Authenticate and Deploy to Dev
+        env:
+          DEV_LOOKERSDK_BASE_URL: ${{ secrets.DEV_LOOKERSDK_BASE_URL }}
+          DEV_LOOKERSDK_CLIENT_ID: ${{ secrets.DEV_LOOKERSDK_CLIENT_ID }}
+          DEV_LOOKERSDK_CLIENT_SECRET: ${{ secrets.DEV_LOOKERSDK_CLIENT_SECRET }}
         run: |
-          if [ -z "${{ secrets.DEV_LOOKERSDK_BASE_URL }}" ]; then
+          if [ -z "$DEV_LOOKERSDK_BASE_URL" ]; then
             echo "Error: DEV_LOOKERSDK_BASE_URL is not set"
             exit 1
           fi
           
           # Call Looker Login API
           login_resp=$(curl -s -X POST \
-            -d "client_id=${{ secrets.DEV_LOOKERSDK_CLIENT_ID }}&client_secret=${{ secrets.DEV_LOOKERSDK_CLIENT_SECRET }}" \
-            "${{ secrets.DEV_LOOKERSDK_BASE_URL }}/api/4.0/login")
+            -d "client_id=$DEV_LOOKERSDK_CLIENT_ID&client_secret=$DEV_LOOKERSDK_CLIENT_SECRET" \
+            "$DEV_LOOKERSDK_BASE_URL/api/4.0/login")
           
           token=$(echo "$login_resp" | jq -r '.access_token')
           if [ "$token" = "null" ] || [ -z "$token" ]; then
@@ -36,7 +40,7 @@ jobs:
           # Deploy main to Production mode
           dep_resp=$(curl -s -w "\n%{http_code}" -X POST \
             -H "Authorization: Bearer $token" \
-            "${{ secrets.DEV_LOOKERSDK_BASE_URL }}/api/4.0/projects/looker_cicd_sample/deploy_to_production")
+            "$DEV_LOOKERSDK_BASE_URL/api/4.0/projects/looker_cicd_sample/deploy_to_production")
           
           http_code=$(echo "$dep_resp" | tail -n 1)
           body=$(echo "$dep_resp" | head -n -1)

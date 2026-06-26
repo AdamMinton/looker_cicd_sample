@@ -10,19 +10,161 @@ jobs:
     name: Deploy to PRD
     runs-on: ubuntu-latest
     environment: PRD
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
-      - name: Authenticate and Deploy to PRD
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Install Ruby and Gazer
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+          bundler-cache: false
+
+      - name: Install Gazer Gem
+        run: gem install gazer
+
+      # Install Python and looker-deployer
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Looker-Deployer
+        run: pip install looker-deployer
+
+      # Authenticate to GCP (Service Account Key)
+      - name: Authenticate to GCP (Service Account Key)
+        if: ${{ secrets.GCP_SA_KEY != '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # Authenticate to GCP (Workload Identity Federation)
+      - name: Authenticate to GCP (Workload Identity Federation)
+        if: ${{ secrets.GCP_SA_KEY == '' && vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && vars.GCP_SERVICE_ACCOUNT != '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Verify GCP Authentication
         run: |
-          if [ -z "${{ secrets.PRD_LOOKERSDK_BASE_URL }}" ]; then
+          if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep -q .; then
+            echo "Error: GCP authentication failed."
+            exit 1
+          fi
+          echo "GCP Authentication verified."
+
+      # Setup Google Cloud SDK (for gcloud storage command)
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Prepare environment files (looker.ini and ~/.netrc)
+      - name: Configure Credentials and Connection Files
+        env:
+          DEV_LOOKERSDK_BASE_URL: ${{ secrets.DEV_LOOKERSDK_BASE_URL }}
+          PRD_LOOKERSDK_BASE_URL: ${{ secrets.PRD_LOOKERSDK_BASE_URL }}
+          DEV_CLIENT_ID: ${{ secrets.DEV_LOOKERSDK_CLIENT_ID }}
+          DEV_CLIENT_SECRET: ${{ secrets.DEV_LOOKERSDK_CLIENT_SECRET }}
+          PRD_CLIENT_ID: ${{ secrets.PRD_LOOKERSDK_CLIENT_ID }}
+          PRD_CLIENT_SECRET: ${{ secrets.PRD_LOOKERSDK_CLIENT_SECRET }}
+        run: |
+          # Normalize URLs
+          DEV_BASE_URL="${DEV_LOOKERSDK_BASE_URL}"
+          DEV_BASE_URL="${DEV_BASE_URL%/}"
+          DEV_BASE_URL="${DEV_BASE_URL%/api/4.0}"
+          DEV_BASE_URL="${DEV_BASE_URL%/api/3.1}"
+          
+          PRD_BASE_URL="${PRD_LOOKERSDK_BASE_URL}"
+          PRD_BASE_URL="${PRD_BASE_URL%/}"
+          PRD_BASE_URL="${PRD_BASE_URL%/api/4.0}"
+          PRD_BASE_URL="${PRD_BASE_URL%/api/3.1}"
+          
+          DEV_HOST=$(python3 -c "import sys, urllib.parse; print(urllib.parse.urlparse(sys.argv[1]).hostname)" "${DEV_BASE_URL}")
+          PRD_HOST=$(python3 -c "import sys, urllib.parse; print(urllib.parse.urlparse(sys.argv[1]).hostname)" "${PRD_BASE_URL}")
+          
+          export DEV_BASE_URL PRD_BASE_URL DEV_HOST PRD_HOST
+          
+          # Write looker.ini
+          cat <<'EOF' | envsubst > looker.ini
+          [dev]
+          base_url=$DEV_BASE_URL
+          client_id=$DEV_CLIENT_ID
+          client_secret=$DEV_CLIENT_SECRET
+          verify_ssl=true
+          
+          [prd]
+          base_url=$PRD_BASE_URL
+          client_id=$PRD_CLIENT_ID
+          client_secret=$PRD_CLIENT_SECRET
+          verify_ssl=true
+          EOF
+          chmod 600 looker.ini
+          
+          # Write ~/.netrc
+          cat <<'EOF' | envsubst > ~/.netrc
+          machine $DEV_HOST
+            login $DEV_CLIENT_ID
+            password $DEV_CLIENT_SECRET
+          
+          machine $PRD_HOST
+            login $PRD_CLIENT_ID
+            password $PRD_CLIENT_SECRET
+          EOF
+          chmod 600 ~/.netrc
+
+      # Check GCS Backup Prefix
+      - name: Check GCS Backup Existence
+        id: check_backup
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          GCS_PATH="gs://looker-migrations-snapshots-adamminton-sandbox/looker_backups/${TAG}/"
+          
+          if gcloud storage ls "${GCS_PATH}**" > /dev/null 2>&1; then
+            echo "backup_exists=true" >> $GITHUB_OUTPUT
+            echo "Backup for tag ${TAG} already exists."
+          else
+            echo "backup_exists=false" >> $GITHUB_OUTPUT
+            echo "Backup for tag ${TAG} does not exist. A new backup will be created."
+          fi
+
+      # Export from DEV and Upload to GCS (only if backup doesn't exist yet)
+      - name: Backup Dev Looker Content to GCS
+        if: steps.check_backup.outputs.backup_exists == 'false'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          GCS_PATH="gs://looker-migrations-snapshots-adamminton-sandbox/looker_backups/${TAG}/"
+          
+          # Export content from dev
+          ldeploy content export --ini ./looker.ini --env dev --folders 1 --local-target ./looker_content_export
+          
+          # Copy exported content to GCS
+          gcloud storage cp --recursive ./looker_content_export/* "${GCS_PATH}"
+
+      # Existing Step: Deploy LookML Tag to PRD Production Mode
+      - name: Authenticate and Deploy LookML to PRD
+        env:
+          PRD_LOOKERSDK_BASE_URL: ${{ secrets.PRD_LOOKERSDK_BASE_URL }}
+          PRD_CLIENT_ID: ${{ secrets.PRD_LOOKERSDK_CLIENT_ID }}
+          PRD_CLIENT_SECRET: ${{ secrets.PRD_LOOKERSDK_CLIENT_SECRET }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if [ -z "${PRD_LOOKERSDK_BASE_URL}" ]; then
             echo "Error: PRD_LOOKERSDK_BASE_URL is not set"
             exit 1
           fi
           
           # Call Looker Login API
           login_resp=$(curl -s -X POST \
-            -d "client_id=${{ secrets.PRD_LOOKERSDK_CLIENT_ID }}&client_secret=${{ secrets.PRD_LOOKERSDK_CLIENT_SECRET }}" \
-            "${{ secrets.PRD_LOOKERSDK_BASE_URL }}/api/4.0/login")
+            -d "client_id=${PRD_CLIENT_ID}&client_secret=${PRD_CLIENT_SECRET}" \
+            "${PRD_LOOKERSDK_BASE_URL}/api/4.0/login")
           
           token=$(echo "$login_resp" | jq -r '.access_token')
           if [ "$token" = "null" ] || [ -z "$token" ]; then
@@ -30,17 +172,12 @@ jobs:
             exit 1
           fi
           
-          # Mask token in logs
           echo "::add-mask::$token"
+          echo "Deploying ref: $TAG"
           
-          # Extract ref name (e.g. tag v1.0.0)
-          ref_name="${{ github.ref_name }}"
-          echo "Deploying ref: $ref_name"
-          
-          # Deploy tag ref to Production
           dep_resp=$(curl -s -w "\n%{http_code}" -X POST \
             -H "Authorization: Bearer $token" \
-            "${{ secrets.PRD_LOOKERSDK_BASE_URL }}/api/4.0/projects/looker_cicd_sample/deploy_ref_to_production?ref=$ref_name")
+            "${PRD_LOOKERSDK_BASE_URL}/api/4.0/projects/looker_cicd_sample/deploy_ref_to_production?ref=$TAG")
           
           http_code=$(echo "$dep_resp" | tail -n 1)
           body=$(echo "$dep_resp" | head -n -1)
@@ -51,3 +188,16 @@ jobs:
             exit 1
           fi
           echo "Deployment successful: $body"
+
+      # Download and Import backup to PRD
+      - name: Import Migrated Content to PRD Looker
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          GCS_PATH="gs://looker-migrations-snapshots-adamminton-sandbox/looker_backups/${TAG}/"
+          
+          # Download backup from GCS
+          gcloud storage cp --recursive "${GCS_PATH}*" ./looker_content_import/
+          
+          # Import content recursively into target
+          ldeploy content import --ini ./looker.ini --env prd --folders ./looker_content_import/Shared --recursive
