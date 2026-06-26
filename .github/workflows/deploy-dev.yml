@@ -37,7 +37,14 @@ jobs:
           # Mask token in logs
           echo "::add-mask::$token"
           
-          # Deploy main to Production mode
+          # Switch session to Developer workspace (dev mode)
+          curl -s -X PATCH \
+            -H "Authorization: Bearer $token" \
+            -H "Content-Type: application/json" \
+            -d '{"workspace_id":"dev"}' \
+            "$DEV_LOOKERSDK_BASE_URL/api/4.0/session"
+          
+          # Deploy master to Production mode
           dep_resp=$(curl -s -w "\n%{http_code}" -X POST \
             -H "Authorization: Bearer $token" \
             "$DEV_LOOKERSDK_BASE_URL/api/4.0/projects/looker_cicd_sample/deploy_to_production")
