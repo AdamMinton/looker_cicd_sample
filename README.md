@@ -178,8 +178,10 @@ We use Google's **Release-Please** to manage versioning and release tags.
 
 ### PRD Deployment (`deploy-prd.yml`)
 - **Trigger**: Pushes of tags matching `v*` (usually when a Release PR is merged).
-- **Environment Gating**: The job runs under the GitHub Environment named `PRD`, which enforces a manual approval check.
-- **Execution**: Upon approval, the workflow performs the following actions:
+- **Environment Gating**: The job runs under the GitHub Environment named `PRD`.
+  > [!NOTE]
+  > **GitHub Free Tier Limitation**: For private repositories on GitHub Free, manual approval gates ("Required reviewers") are disabled. In this scenario, we recommend configuring **Deployment branches and tags** rules restricted to `v*` tags as a safety guard. For production/customer repositories, always configure **Required reviewers** to enforce a human-in-the-loop validation step.
+- **Execution**: Upon approval (or when triggered by a matching tag release), the workflow performs the following actions:
   1. **LookML Deployment**: Logs in to the PRD Looker instance and calls the Advanced Deploy Mode API to deploy the specific tag ref:
      ```bash
      POST /api/4.0/projects/looker_cicd_sample/deploy_ref_to_production?ref=v*

@@ -1,15 +1,7 @@
 # CODEOWNERS
-# Establish path-based routing rules
+# Establish ownership routing
 
-* @data-team
-/models/ @core-analytics-leads
-/views/ @view-owners
+* adamminton@google.com
+/models/ adamminton@google.com
+/views/ adamminton@google.com
 
-# Department-specific ownership
-/models/finance/ @finance-team
-/views/finance/ @finance-team
-/explores/finance/ @finance-team
-
-/models/marketing/ @marketing-team
-/views/marketing/ @marketing-team
-/explores/marketing/ @marketing-team
