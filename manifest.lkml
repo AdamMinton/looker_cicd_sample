@@ -9,3 +9,8 @@
 #   match: "$.file.*.view.*.dimension_group.*"
 #   expr_rule: ( $if ( === ::match:description undefined ) "Missing description" ( $if ( $boolean ( $match "^\\s*$" ::match:description ) ) "Empty description" true ) ) ;;
 # }
+# rule: measures_require_descriptions {
+#   description: "All measures must have a description."
+#   match: "$.file.*.view.*.measure.*"
+#   expr_rule: ( $if ( === ::match:description undefined ) "Missing description" ( $if ( $boolean ( $match "^\\s*$" ::match:description ) ) "Empty description" true ) ) ;;
+# }
