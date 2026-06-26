@@ -10,6 +10,10 @@ jobs:
     name: Deploy to PRD
     runs-on: ubuntu-latest
     environment: PRD
+    env:
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
     permissions:
       id-token: write
       contents: read
@@ -39,18 +43,18 @@ jobs:
 
       # Authenticate to GCP (Service Account Key)
       - name: Authenticate to GCP (Service Account Key)
-        if: ${{ secrets.GCP_SA_KEY != '' }}
+        if: ${{ env.GCP_SA_KEY != '' }}
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          credentials_json: ${{ env.GCP_SA_KEY }}
 
       # Authenticate to GCP (Workload Identity Federation)
       - name: Authenticate to GCP (Workload Identity Federation)
-        if: ${{ secrets.GCP_SA_KEY == '' && vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && vars.GCP_SERVICE_ACCOUNT != '' }}
+        if: ${{ env.GCP_SA_KEY == '' && env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' }}
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
 
       - name: Verify GCP Authentication
         run: |
