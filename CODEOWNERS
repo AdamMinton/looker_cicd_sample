@@ -1,0 +1,15 @@
+# CODEOWNERS
+# Establish path-based routing rules
+
+* @data-team
+/models/ @core-analytics-leads
+/views/ @view-owners
+
+# Department-specific ownership
+/models/finance/ @finance-team
+/views/finance/ @finance-team
+/explores/finance/ @finance-team
+
+/models/marketing/ @marketing-team
+/views/marketing/ @marketing-team
+/explores/marketing/ @marketing-team
