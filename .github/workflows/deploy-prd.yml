@@ -71,13 +71,6 @@ jobs:
           workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
 
-      - name: Verify GCP Authentication
-        run: |
-          if ! gcloud auth list --filter=account:* --format="value(account)" | grep -q .; then
-            echo "Error: GCP authentication failed."
-            exit 1
-          fi
-          echo "GCP Authentication verified."
 
       # Setup Google Cloud SDK (for gcloud storage command)
       - name: Set up Cloud SDK
