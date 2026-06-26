@@ -71,4 +71,9 @@ view: order_items {
     type: sum
     sql: ${sale_price} ;;
   }
+  measure: total_orders {
+    description: "Total Orders"
+    type: count_distinct
+    sql: ${order_id} ;;
+  }
 }
