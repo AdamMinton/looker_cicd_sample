@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/AdamMinton/looker_cicd_sample/compare/v1.0.0...v1.0.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* resolve unrecognized secrets named-value in deploy-prd.yml ([8608a4d](https://github.com/AdamMinton/looker_cicd_sample/commit/8608a4d8be5d8becf2dbd3deb123ad2173f7a646))
+
 ## 1.0.0 (2026-06-26)
 
 
