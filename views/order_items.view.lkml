@@ -65,4 +65,8 @@ view: order_items {
     type: count
     drill_fields: [id]
   }
+  measure: total_sales {
+    type: sum
+    sql: ${sale_price} ;;
+  }
 }
