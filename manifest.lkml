@@ -14,6 +14,3 @@
 #   match: "$.file.*.view.*.measure.*"
 #   expr_rule: ( $if ( === ::match:description undefined ) "Missing description" ( $if ( $boolean ( $match "^\\s*$" ::match:description ) ) "Empty description" true ) ) ;;
 # }
-
-
-#small change
